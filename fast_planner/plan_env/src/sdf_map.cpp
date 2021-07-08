@@ -24,7 +24,7 @@
 
 
 #include "plan_env/sdf_map.h"
-
+#include <opencv2/imgproc.hpp> // tw
 // #define current_img_ md_.depth_image_[image_cnt_ & 1]
 // #define last_img_ md_.depth_image_[!(image_cnt_ & 1)]
 
@@ -129,7 +129,6 @@ void SDFMap::initMap(ros::NodeHandle& nh) {
   /* init callback */
 
   depth_sub_.reset(new message_filters::Subscriber<sensor_msgs::Image>(node_, "/sdf_map/depth", 50));
-
   if (mp_.pose_type_ == POSE_STAMPED) {
     pose_sub_.reset(
         new message_filters::Subscriber<geometry_msgs::PoseStamped>(node_, "/sdf_map/pose", 25));
@@ -376,7 +375,6 @@ void SDFMap::projectDepthImage() {
   // int cols = current_img_.cols, rows = current_img_.rows;
   int cols = md_.depth_image_.cols;
   int rows = md_.depth_image_.rows;
-
   double depth;
 
   Eigen::Matrix3d camera_r = md_.camera_q_.toRotationMatrix();
@@ -853,7 +851,6 @@ void SDFMap::odomCallback(const nav_msgs::OdometryConstPtr& odom) {
   md_.camera_pos_(0) = odom->pose.pose.position.x;
   md_.camera_pos_(1) = odom->pose.pose.position.y;
   md_.camera_pos_(2) = odom->pose.pose.position.z;
-
   md_.has_odom_ = true;
 }
 
@@ -994,7 +991,7 @@ void SDFMap::publishMap() {
 
   Eigen::Vector3i min_cut = md_.local_bound_min_;
   Eigen::Vector3i max_cut = md_.local_bound_max_;
-
+  
   int lmm = mp_.local_map_margin_ / 2;
   min_cut -= Eigen::Vector3i(lmm, lmm, lmm);
   max_cut += Eigen::Vector3i(lmm, lmm, lmm);
@@ -1290,13 +1287,22 @@ void SDFMap::depthOdomCallback(const sensor_msgs::ImageConstPtr& img,
   md_.camera_pos_(2) = odom->pose.pose.position.z;
   md_.camera_q_ = Eigen::Quaterniond(odom->pose.pose.orientation.w, odom->pose.pose.orientation.x,
                                      odom->pose.pose.orientation.y, odom->pose.pose.orientation.z);
-
   /* get depth image */
   cv_bridge::CvImagePtr cv_ptr;
   cv_ptr = cv_bridge::toCvCopy(img, img->encoding);
+  /*
+    void cv::resize	(	InputArray 	src,
+OutputArray 	dst,
+Size 	dsize,
+double 	fx = 0,
+double 	fy = 0,
+int 	interpolation = INTER_LINEAR 
+)	
+  */
+  cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(640, 480), 0, 0, cv::INTER_AREA); //tw
   if (img->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
     (cv_ptr->image).convertTo(cv_ptr->image, CV_16UC1, mp_.k_depth_scaling_factor_);
-  }
+  }  
   cv_ptr->image.copyTo(md_.depth_image_);
 
   md_.occ_need_update_ = true;

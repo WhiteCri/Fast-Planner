@@ -123,7 +123,7 @@ void KinoReplanFSM::printFSMExecState() {
 void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
   static int fsm_num = 0;
   fsm_num++;
-  if (fsm_num == 100) {
+  if (fsm_num == 100) { 
     printFSMExecState();
     if (!have_odom_) cout << "no odom." << endl;
     if (!trigger_) cout << "wait for goal." << endl;
@@ -156,7 +156,7 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
       start_vel_ = odom_vel_;
       start_acc_.setZero();
 
-      Eigen::Vector3d rot_x = odom_orient_.toRotationMatrix().block(0, 0, 3, 1);
+      Eigen::Vector3d rot_x = odom_orient_.toRotationMatrix().block(0, 0, 3, 1); //tw : 3 by 3 rot_mat에서 x 긁어오는 코드
       start_yaw_(0)         = atan2(rot_x(1), rot_x(0));
       start_yaw_(1) = start_yaw_(2) = 0.0;
 
